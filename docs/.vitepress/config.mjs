@@ -5,7 +5,9 @@ export default defineConfig({
     title: "Buzzs-Cli",
     description: "A Buzzs-Cli websit!",
     themeConfig: {
-        // https://vitepress.dev/reference/default-theme-config
+        search: {
+            provider: 'local'
+        },
         nav: [
             { text: 'Home', link: '/' },
             { text: 'Examples', link: '/markdown-examples' }
