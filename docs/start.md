@@ -1,6 +1,5 @@
 ---
 outline: deep
-order: 3
 ---
 # Markdown Extension Examples
 
