@@ -1,7 +1,11 @@
 "use strict";
+const packageJson = require("../package.json");
+const commander = require("commander");
 
 function init() {
-	console.log(3333);
+	const program = new commander.Command(packageJson.name).version(
+		packageJson.version
+	);
 }
 
 module.exports = {
