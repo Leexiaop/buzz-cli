@@ -9,7 +9,8 @@ export default defineConfig({
 			provider: "local",
 		},
 		nav: [
-			{ text: "Docs", link: "/" },
+			{ text: "Buzzs", link: "https://www.ibadgers.cn/buzzs/" },
+			{ text: "Buzzs-UI", link: "https://www.ibadgers.cn/buzzs-ui/" },
 			{ text: "Github", link: "/markdown-examples" },
 		],
 

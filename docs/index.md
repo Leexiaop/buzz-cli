@@ -4,8 +4,8 @@ layout: home
 
 hero:
   name: "Buzzs-Cli"
-  text: "A Buzzs-Cli websit!"
-  tagline: My great project tagline
+  text: "创建任意前端流行技术栈项目的脚手架!"
+  tagline: one Cli, more projects!
   actions:
     - theme: brand
       text: 文档
