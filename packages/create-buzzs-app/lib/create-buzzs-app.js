@@ -1,14 +1,9 @@
-'use strict';
+"use strict";
 
-module.exports = createBuzzsApp;
-
-const init = () => {
-    console.log(3333)
-}
-function createBuzzsApp() {
-  return 'Hello from createBuzzsApp';
+function init() {
+	console.log(3333);
 }
 
 module.exports = {
-    init
+	init,
 };

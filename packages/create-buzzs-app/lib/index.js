@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 
 const currentNodeVersion = process.versions.node;
-const semver = currentNodeVersion.split('.');
+const semver = currentNodeVersion.split(".");
 const major = semver[0];
 
+//  检查node版本
 if (major < 14) {
-    console.error(`Your node version is ${major}, Create Buzzs App requires Node 14 or heigher, please update your version of Node.`);
-    process.exist(1)
-};
+	console.error(
+		`Your node version is ${major}, Create Buzzs App requires Node 14 or heigher, please update your version of Node.`
+	);
+	process.exist(1);
+}
 
-const { init } = require('./create-buzzs-app');
-
+const { init } = require("./create-buzzs-app");
 init();
