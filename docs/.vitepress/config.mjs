@@ -2,7 +2,7 @@ import { defineConfig } from "vitepress";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-	title: "Buzzs-Cli",
+	title: "Buzzs-cli",
 	description: "A Buzzs-Cli websit!",
 	themeConfig: {
 		search: {
@@ -11,7 +11,6 @@ export default defineConfig({
 		nav: [
 			{ text: "Buzzs", link: "https://www.ibadgers.cn/buzzs/" },
 			{ text: "Buzzs-UI", link: "https://www.ibadgers.cn/buzzs-ui/" },
-			{ text: "Github", link: "/markdown-examples" },
 		],
 
 		sidebar: [
@@ -26,7 +25,7 @@ export default defineConfig({
 		],
 
 		socialLinks: [
-			{ icon: "github", link: "https://github.com/vuejs/vitepress" },
+			{ icon: "github", link: "https://github.com/Leexiaop/buzz-cli" },
 		],
 	},
 });
