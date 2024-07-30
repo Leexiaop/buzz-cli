@@ -4,6 +4,7 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
 	title: "Buzzs-cli",
 	description: "A Buzzs-Cli websit!",
+	base: '/buzzs-cli/',
 	themeConfig: {
 		search: {
 			provider: "local",
