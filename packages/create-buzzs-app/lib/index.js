@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const currentNodeVersion = process.versions.node;
-const semver = currentNodeVersion.split(".");
+const semver = currentNodeVersion.split('.');
 const major = semver[0];
 
 //  检查node版本
@@ -12,5 +12,5 @@ if (major < 14) {
 	process.exist(1);
 }
 
-const { init } = require("./create-buzzs-app");
+const { init } = require('./create-buzzs-app');
 init();
