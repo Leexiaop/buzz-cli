@@ -10,10 +10,8 @@ function init() {
 		.arguments('<project-directory>')
 		.usage(`${chalk.green('<project-directory>')} [options]`)
 		.action(name => {
-			console.log(name, 1111);
 			projectName = name;
 		})
-		.option('--info', 'print environment debug info')
 		.parse(process.argv);
 
 	if (!projectName.trim() || typeof projectName !== 'string') {
