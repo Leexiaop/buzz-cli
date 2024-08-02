@@ -10,12 +10,28 @@ function init() {
 		.arguments('<project-directory>')
 		.usage(`${chalk.green('<project-directory>')} [options]`)
 		.action(name => {
+			console.log(name, 1111);
 			projectName = name;
 		})
 		.option('--info', 'print environment debug info')
 		.parse(process.argv);
-	console.log(program.info, 444);
-	console.log(projectName);
+
+	if (!projectName.trim() || typeof projectName !== 'string') {
+		console.error('Please specify the project directory:');
+		console.log(
+          `  ${chalk.cyan(program.name())} ${chalk.green('<project-directory>')}`
+		);
+		console.log();
+		console.log('For example:');
+		console.log(
+          `  ${chalk.cyan(program.name())} ${chalk.green('my-buzzs-app')}`
+		);
+		console.log();
+		console.log(
+          `Run ${chalk.cyan(`${program.name()} --help`)} to see all options.`
+		);
+		process.exit(1);
+	}
 }
 
 module.exports = {
