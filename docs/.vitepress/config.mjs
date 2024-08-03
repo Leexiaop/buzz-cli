@@ -23,6 +23,13 @@ export default defineConfig({
 				text: "入门",
 				items: [{ text: "开始", link: "/start" }],
 			},
+			{
+				text: "开发",
+				items: [
+					{text: '准备工作', link: '/before'},
+					{text: '初始化项目', link: '/init'}
+				]
+			}
 		],
 
 		socialLinks: [
