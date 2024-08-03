@@ -20,7 +20,7 @@ export default defineConfig({
 				items: [{ text: "关于文档", link: "/about" }],
 			},
 			{
-				text: "入门",
+				text: "文档",
 				items: [{ text: "开始", link: "/start" }],
 			},
 			{
