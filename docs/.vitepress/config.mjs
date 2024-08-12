@@ -2,9 +2,9 @@ import { defineConfig } from 'vitepress';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-	title: 'Buzzs-cli',
-	description: 'A Buzzs-Cli websit!',
-	base: '/buzzs-cli/',
+	title: 'Create-buzzs-app',
+	description: 'A Create-Buzzs-app description!',
+	base: '/create-buzzs-app/',
 	themeConfig: {
 		search: {
 			provider: 'local'

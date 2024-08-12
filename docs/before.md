@@ -16,7 +16,7 @@ Monorepo 是一种项目代码管理方式，指单个仓库中管理多个项�
 
 所以，中大型项目，多模块项目，更适合用 MonoRepo 方式管理代码，在开发、协作效率、代码一致性方面都能受益。
 
-对于，我们常常使用的create-react-app, vue-cli等，使用的都是monorepo的方式，所以我们在组织buzzs-cli架构的时候，我们同样也采用monorepo的方式，正所谓天下文章一大抄，就看会抄不会抄，我们只是代码的搬运工。
+对于，我们常常使用的create-react-app, vue-cli等，使用的都是monorepo的方式，所以我们在组织Create-buzzs-app架构的时候，我们同样也采用monorepo的方式，正所谓天下文章一大抄，就看会抄不会抄，我们只是代码的搬运工。
 
 更多关于monorepo的概念，请参考：https://juejin.cn/post/7215886869199896637，或者参考其他相关文章。
 
@@ -43,6 +43,6 @@ my-project
 可以通过最外层的node_modules来管理依赖，也可以通过自己包私有的node_modules来管理自己的依赖。灵活性比较高。而且有一些列的命令来实现包的管理。具体细节，请前往文档查看，这里不多说。
 
 
-## 关于buzzs-cli
+## 关于Create-buzzs-app
 
-对于buzzs-cli的架构设计，我们采用的是与create-react-app风格完全一样，可以说基本是照抄的源码，只是在create-react-app源码的基础上稍加改动，做到了自己的风格，所以，这里你将会随处看到create-react-app的影子。当然了，我们也阅读了create-react-app的核心源码，具体解析，可以去微信小程序：```平头哥前端练功房```去阅读create-react-app的核心源码解析。接下来，我们就从0开始去搭建一个属于自己的前端脚手架。
+对于Create-buzzs-app的架构设计，我们采用的是与create-react-app风格完全一样，可以说基本是照抄的源码，只是在create-react-app源码的基础上稍加改动，做到了自己的风格，所以，这里你将会随处看到create-react-app的影子。当然了，我们也阅读了create-react-app的核心源码，具体解析，可以去微信小程序：```平头哥前端练功房```去阅读create-react-app的核心源码解析。接下来，我们就从0开始去搭建一个属于自己的前端脚手架。

@@ -3,7 +3,7 @@
 layout: home
 
 hero:
-  name: "Buzzs-cli"
+  name: "Create-buzzs-app"
   text: "创建任意前端流行技术栈项目的脚手架!"
   tagline: one Cli, more projects!
   actions:

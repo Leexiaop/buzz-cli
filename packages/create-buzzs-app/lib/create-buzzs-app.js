@@ -75,7 +75,7 @@ const init = () => {
 			console.log();
 			console.log(
 				'The latest instructions for creating a new app can be found here:\n'
-					+ 'https://www.ibadgers.cn/buzzs-cli/'
+					+ 'https://www.ibadgers.cn/create-buzzs-app/'
 			);
 			console.log();
 		} else {
