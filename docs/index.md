@@ -3,9 +3,9 @@
 layout: home
 
 hero:
-  name: "Create-buzzs-app"
-  text: "创建任意前端流行技术栈项目的脚手架!"
-  tagline: one Cli, more projects!
+  name: "Create-Buzzs-App"
+  text: "前端项目创建的首选!"
+  tagline: 用命令创建任意流行前端技术栈组合式的项目!
   actions:
     - theme: brand
       text: 文档

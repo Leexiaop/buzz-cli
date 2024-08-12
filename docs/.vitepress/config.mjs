@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-	title: 'Create-buzzs-app',
+	title: 'Create-Buzzs-App',
 	description: 'A Create-Buzzs-app description!',
 	base: '/create-buzzs-app/',
 	themeConfig: {
