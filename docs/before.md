@@ -31,6 +31,7 @@ lerna JavaScript 单一源码仓库（Monorepos）的原创工具.是monorepos�
 my-project
     node_modules/
     package.json
+    lerna.json
     packages/
         package1/
             pacakge.json
