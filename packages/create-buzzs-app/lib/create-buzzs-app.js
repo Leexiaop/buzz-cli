@@ -11,6 +11,7 @@ const fs = require('fs-extra');
 const os = require('os');
 const execSync = require('child_process').execSync;
 const spawn = require('cross-spawn');
+const prompts = require('prompts');
 
 let projectName = '';
 const init = () => {
@@ -115,6 +116,7 @@ const createApp = (name, verbose, version, template, useYarn, usePnp) => {
 	const unsportedNodeVersion = !semver.satisfies(semver.coerce(process.version), '>=14');
 	if (unsportedNodeVersion) {
 		console.log(chalk.yellow(`You are useing Node ${process.version} so the project will be bootstrapped with an old unsupported version of tools.\n\n Please update to Node 14 or higher for a better, fully supported experience.\n`));
+		version = 'buzzs-scripts@0.9.x';
 	}
 	const root = path.resolve(name);
 	const appName = path.basename(root);
@@ -145,8 +147,184 @@ const createApp = (name, verbose, version, template, useYarn, usePnp) => {
 
 	if (!useYarn) {
 		const npmInfo = checkNpmVersion();
-		console.log(npmInfo);
+		if (!npmInfo.hasMinNpm) {
+			if (npmInfo.npmVersion) {
+				console.log(
+					chalk.yellow(
+                        `You are using npm ${npmInfo.npmVersion} so the project will be bootstrapped with an old unsupported version of tools.\n\n`
+                        + 'Please update to npm 6 or higher for a better, fully supported experience.\n'
+					)
+				);
+			}
+			version = 'buzzs-scripts@0.9.x';
+		}
+	} else if (usePnp) {
+		const yarnInfo = checkYarnVersion();
+		if (yarnInfo.yarnVersion) {
+			if (!yarnInfo.hasMinYarnPnp) {
+				console.log(
+					chalk.yellow(
+                `You are using Yarn ${yarnInfo.yarnVersion} together with the --use-pnp flag, but Plug'n'Play is only supported starting from the 1.12 release.\n\n`
+                  + 'Please update to Yarn 1.12 or higher for a better, fully supported experience.\n'
+					)
+				);
+				usePnp = false;
+			}
+			if (!yarnInfo.hasMaxYarnPnp) {
+				console.log(
+					chalk.yellow(
+						'The --use-pnp flag is no longer necessary with yarn 2 and will be deprecated and removed in a future release.\n'
+					)
+				);
+				usePnp = false;
+			}
+		}
 	}
+	run(
+		root,
+		appName,
+		version,
+		verbose,
+		originalDirectory,
+		template,
+		useYarn,
+		usePnp
+	);
+};
+
+const run = (root, appName, version, verbose, originalDirectory, template, useYarn, usePnp) => {
+	console.log(root, appName, version, verbose, originalDirectory, template, useYarn, usePnp);
+	Promise.all([getInstallPackage(version, originalDirectory)]).then(res => {
+		console.log(res);
+	});
+};
+
+const getInstallPackage = (version, originalDirectory) => {
+	let packageToInstall = 'react-scripts';
+	const validSemver = semver.valid(version);
+	console.log(validSemver);
+	return;
+	if (validSemver) {
+		packageToInstall += `@${validSemver}`;
+	} else if (version) {
+		if (version[0] === '@' && !version.includes('/')) {
+			packageToInstall += version;
+		} else if (version.match(/^file:/)) {
+			packageToInstall = `file:${path.resolve(
+				originalDirectory,
+				version.match(/^file:(.*)?$/)[1]
+			)}`;
+		} else {
+			// for tar.gz or alternative paths
+			packageToInstall = version;
+		}
+	}
+
+	const scriptsToWarn = [
+		{
+			name: 'react-scripts-ts',
+			message: chalk.yellow(
+          `The react-scripts-ts package is deprecated. TypeScript is now supported natively in Create React App. You can use the ${chalk.green(
+          	'--template typescript'
+          )} option instead when generating your app to include TypeScript support. Would you like to continue using react-scripts-ts?`
+			)
+		}
+	];
+
+	for (const script of scriptsToWarn) {
+		if (packageToInstall.startsWith(script.name)) {
+			return prompts({
+				type: 'confirm',
+				name: 'useScript',
+				message: script.message,
+				initial: false
+			}).then(answer => {
+				if (!answer.useScript) {
+					process.exit(0);
+				}
+
+				return packageToInstall;
+			});
+		}
+	}
+
+	return Promise.resolve(packageToInstall);
+};
+
+const getTemplateInstallPackage = (template, originalDirectory) => {
+	let templateToInstall = 'cra-template';
+	if (template) {
+		if (template.match(/^file:/)) {
+			templateToInstall = `file:${path.resolve(
+				originalDirectory,
+				template.match(/^file:(.*)?$/)[1]
+			)}`;
+		} else if (
+			template.includes('://')
+        || template.match(/^.+\.(tgz|tar\.gz)$/)
+		) {
+			// for tar.gz or alternative paths
+			templateToInstall = template;
+		} else {
+			// Add prefix 'cra-template-' to non-prefixed templates, leaving any
+			// @scope/ and @version intact.
+			const packageMatch = template.match(/^(@[^/]+\/)?([^@]+)?(@.+)?$/);
+			const scope = packageMatch[1] || '';
+			const templateName = packageMatch[2] || '';
+			const version = packageMatch[3] || '';
+
+			if (
+				templateName === templateToInstall
+          || templateName.startsWith(`${templateToInstall}-`)
+			) {
+				// Covers:
+				// - cra-template
+				// - @SCOPE/cra-template
+				// - cra-template-NAME
+				// - @SCOPE/cra-template-NAME
+				templateToInstall = `${scope}${templateName}${version}`;
+			} else if (version && !scope && !templateName) {
+				// Covers using @SCOPE only
+				templateToInstall = `${version}/${templateToInstall}`;
+			} else {
+				// Covers templates without the `cra-template` prefix:
+				// - NAME
+				// - @SCOPE/NAME
+				templateToInstall = `${scope}${templateToInstall}-${templateName}${version}`;
+			}
+		}
+	}
+
+	return Promise.resolve(templateToInstall);
+};
+
+const checkYarnVersion = () => {
+	const minYarnPnp = '1.12.0';
+	const maxYarnPnp = '2.0.0';
+	let hasMinYarnPnp = false;
+	let hasMaxYarnPnp = false;
+	let yarnVersion = null;
+	try {
+		yarnVersion = execSync('yarnpkg --version').toString().trim();
+		if (semver.valid(yarnVersion)) {
+			hasMinYarnPnp = semver.gte(yarnVersion, minYarnPnp);
+			hasMaxYarnPnp = semver.lt(yarnVersion, maxYarnPnp);
+		} else {
+			const trimmedYarnVersionMatch = /^(.+?)[-+].+$/.exec(yarnVersion);
+			if (trimmedYarnVersionMatch) {
+				const trimmedYarnVersion = trimmedYarnVersionMatch.pop();
+				hasMinYarnPnp = semver.gte(trimmedYarnVersion, minYarnPnp);
+				hasMaxYarnPnp = semver.lt(trimmedYarnVersion, maxYarnPnp);
+			}
+		}
+	} catch (err) {
+		console.log(err);
+	}
+	return {
+		hasMinYarnPnp: hasMinYarnPnp,
+		hasMaxYarnPnp: hasMaxYarnPnp,
+		yarnVersion: yarnVersion
+	};
 };
 
 const checkNpmVersion = () => {
