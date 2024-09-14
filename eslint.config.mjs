@@ -209,7 +209,7 @@ export default [
 			'no-useless-call': 'warn',
 			'handle-callback-err': 'off',
 			'no-useless-concat': 'warn',
-			'max-lines': ['warn', 800],
+			'max-lines': ['warn', 1800],
 			'no-octal-escape': 'off',
 			'no-shadow': 'off',
 			'no-unsafe-finally': 'error',

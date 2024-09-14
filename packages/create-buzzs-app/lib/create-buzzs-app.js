@@ -9,9 +9,13 @@ const path = require('path');
 const validateProjectName = require('validate-npm-package-name');
 const fs = require('fs-extra');
 const os = require('os');
+const dns = require('dns');
 const execSync = require('child_process').execSync;
 const spawn = require('cross-spawn');
 const prompts = require('prompts');
+const hyperquest = require('hyperquest');
+const tmp = require('tmp');
+const unpack = require('tar-pack').unpack;
 
 let projectName = '';
 const init = () => {
@@ -70,42 +74,42 @@ const init = () => {
 		);
 		process.exit(1);
 	}
-	const useYarn = isUsingYarn();
-	createApp(
-		projectName,
-		program.verbose,
-		program.scriptsVersion,
-		program.template,
-		useYarn,
-		program.usePnp
-	);
-	// checkForLatestVersion().then((res) => {
-	// 	if (res && semver.lt(packageJson.version, res)) {
-	// 		console.log();
-	// 		console.error(
-	// 			chalk.yellow(
-	// 				`You are running \`create-buzzs-app\` ${packageJson.version}, which is behind the latest release (${res}).\n\n`
-	// 					+ 'We recommend always using the latest version of create-buzzs-app if possible.'
-	// 			)
-	// 		);
-	// 		console.log();
-	// 		console.log(
-	// 			'The latest instructions for creating a new app can be found here:\n'
-	// 				+ 'https://www.ibadgers.cn/create-buzzs-app/'
-	// 		);
-	// 		console.log();
-	// 	} else {
-	// 		const useYarn = isUsingYarn();
-	// 		createApp(
-	// 			projectName,
-	// 			program.verbose,
-	// 			program.scriptsVersion,
-	// 			program.template,
-	// 			useYarn,
-	// 			program.usePnp
-	// 		);
-	// 	}
-	// });
+	// const useYarn = isUsingYarn();
+	// createApp(
+	// 	projectName,
+	// 	program.verbose,
+	// 	program.scriptsVersion,
+	// 	program.template,
+	// 	useYarn,
+	// 	program.usePnp
+	// );
+	checkForLatestVersion().then((res) => {
+		if (res && semver.lt(packageJson.version, res)) {
+			console.log();
+			console.error(
+				chalk.yellow(
+					`You are running \`create-buzzs-app\` ${packageJson.version}, which is behind the latest release (${res}).\n\n`
+						+ 'We recommend always using the latest version of create-buzzs-app if possible.'
+				)
+			);
+			console.log();
+			console.log(
+				'The latest instructions for creating a new app can be found here:\n'
+					+ 'https://www.ibadgers.cn/create-buzzs-app/'
+			);
+			console.log();
+		} else {
+			const useYarn = isUsingYarn();
+			createApp(
+				projectName,
+				program.verbose,
+				program.scriptsVersion,
+				program.template,
+				useYarn,
+				program.usePnp
+			);
+		}
+	});
 };
 
 const isUsingYarn = () => {
@@ -116,7 +120,7 @@ const createApp = (name, verbose, version, template, useYarn, usePnp) => {
 	const unsportedNodeVersion = !semver.satisfies(semver.coerce(process.version), '>=14');
 	if (unsportedNodeVersion) {
 		console.log(chalk.yellow(`You are useing Node ${process.version} so the project will be bootstrapped with an old unsupported version of tools.\n\n Please update to Node 14 or higher for a better, fully supported experience.\n`));
-		version = 'buzzs-scripts@0.9.x';
+		version = 'react-scripts@0.9.x';
 	}
 	const root = path.resolve(name);
 	const appName = path.basename(root);
@@ -156,7 +160,7 @@ const createApp = (name, verbose, version, template, useYarn, usePnp) => {
 					)
 				);
 			}
-			version = 'buzzs-scripts@0.9.x';
+			version = 'react-scripts@0.9.x';
 		}
 	} else if (usePnp) {
 		const yarnInfo = checkYarnVersion();
@@ -192,18 +196,397 @@ const createApp = (name, verbose, version, template, useYarn, usePnp) => {
 	);
 };
 
-const run = (root, appName, version, verbose, originalDirectory, template, useYarn, usePnp) => {
-	console.log(root, appName, version, verbose, originalDirectory, template, useYarn, usePnp);
-	Promise.all([getInstallPackage(version, originalDirectory)]).then(res => {
-		console.log(res);
+const run = (root, appName,	version, verbose, originalDirectory, template, useYarn,	usePnp) => {
+	Promise.all([
+		getInstallPackage(version, originalDirectory),
+		getTemplateInstallPackage(template, originalDirectory)
+	]).then(([packageToInstall, templateToInstall]) => {
+		const allDependencies = ['react', 'react-dom', packageToInstall];
+
+		console.log('Installing packages. This might take a couple of minutes.');
+
+		Promise.all([
+			getPackageInfo(packageToInstall),
+			getPackageInfo(templateToInstall)
+		])
+			.then(([packageInfo, templateInfo]) =>
+				checkIfOnline(useYarn).then(isOnline => ({
+					isOnline,
+					packageInfo,
+					templateInfo
+				}))
+			)
+			.then(({ isOnline, packageInfo, templateInfo }) => {
+				let packageVersion = semver.coerce(packageInfo.version);
+
+				const templatesVersionMinimum = '3.3.0';
+
+				if (!semver.valid(packageVersion)) {
+					packageVersion = templatesVersionMinimum;
+				}
+
+				const supportsTemplates = semver.gte(
+					packageVersion,
+					templatesVersionMinimum
+				);
+				if (supportsTemplates) {
+					allDependencies.push(templateToInstall);
+				} else if (template) {
+					console.log('');
+					console.log(
+              `The ${chalk.cyan(packageInfo.name)} version you're using ${
+                packageInfo.name === 'react-scripts' ? 'is not' : 'may not be'
+              } compatible with the ${chalk.cyan('--template')} option.`
+					);
+					console.log('');
+				}
+
+				console.log(
+            `Installing ${chalk.cyan('react')}, ${chalk.cyan(
+            	'react-dom'
+            )}, and ${chalk.cyan(packageInfo.name)}${
+              supportsTemplates ? ` with ${chalk.cyan(templateInfo.name)}` : ''
+            }...`
+				);
+				console.log();
+
+				return install(
+					root,
+					useYarn,
+					usePnp,
+					allDependencies,
+					verbose,
+					isOnline
+				).then(() => ({
+					packageInfo,
+					supportsTemplates,
+					templateInfo
+				}));
+			})
+			.then(async ({ packageInfo, supportsTemplates, templateInfo }) => {
+				const packageName = packageInfo.name;
+				const templateName = supportsTemplates ? templateInfo.name : undefined;
+				checkNodeVersion(packageName);
+				setCaretRangeForRuntimeDeps(packageName);
+
+				const pnpPath = path.resolve(process.cwd(), '.pnp.js');
+
+				const nodeArgs = fs.existsSync(pnpPath) ? ['--require', pnpPath] : [];
+
+				await executeNodeScript(
+					{
+						cwd: process.cwd(),
+						args: nodeArgs
+					},
+					[root, appName, verbose, originalDirectory, templateName],
+            `
+          const init = require('${packageName}/scripts/init.js');
+          init.apply(null, JSON.parse(process.argv[1]));
+        `
+				);
+
+				if (version === 'react-scripts@0.9.x') {
+					console.log(
+						chalk.yellow(
+							'\nNote: the project was bootstrapped with an old unsupported version of tools.\n'
+                  + 'Please update to Node >=14 and npm >=6 to get supported tools in new projects.\n'
+						)
+					);
+				}
+			})
+			.catch(reason => {
+				console.log();
+				console.log('Aborting installation.');
+				if (reason.command) {
+					console.log(`  ${chalk.cyan(reason.command)} has failed.`);
+				} else {
+					console.log(
+						chalk.red('Unexpected error. Please report it as a bug:')
+					);
+					console.log(reason);
+				}
+				console.log();
+
+				const knownGeneratedFiles = ['package.json', 'node_modules'];
+				const currentFiles = fs.readdirSync(path.join(root));
+				currentFiles.forEach(file => {
+					knownGeneratedFiles.forEach(fileToMatch => {
+						if (file === fileToMatch) {
+							console.log(`Deleting generated file... ${chalk.cyan(file)}`);
+							fs.removeSync(path.join(root, file));
+						}
+					});
+				});
+				const remainingFiles = fs.readdirSync(path.join(root));
+				if (!remainingFiles.length) {
+					console.log(
+              `Deleting ${chalk.cyan(`${appName}/`)} from ${chalk.cyan(
+              	path.resolve(root, '..')
+              )}`
+					);
+					process.chdir(path.resolve(root, '..'));
+					fs.removeSync(path.join(root));
+				}
+				console.log('Done.');
+				process.exit(1);
+			});
+	});
+};
+
+const install = (root, useYarn, usePnp, dependencies, verbose, isOnline) => {
+	return new Promise((resolve, reject) => {
+		let command = '';
+		let args = null;
+		if (useYarn) {
+			command = 'yarnpkg';
+			args = ['add', '--exact'];
+			if (!isOnline) {
+				args.push('--offline');
+			}
+
+			if (usePnp) {
+				args.push('--enable-pnp');
+			}
+			[].push.apply(args, dependencies);
+			args.push('--cwd');
+			args.push(root);
+			if (!isOnline) {
+				console.log(chalk.yellow('You appear to be offline.'));
+				console.log(chalk.yellow('Falling back to the local Yarn cache.'));
+				console.log();
+			}
+		} else {
+			command = 'npm';
+			args = [
+				'install',
+				'--no-audit',
+				'--save',
+				'--save-exact',
+				'--loglevel',
+				'error'
+			].concat(dependencies);
+
+			if (usePnp) {
+				console.log(chalk.yellow('NPM doesn\'t support PnP.'));
+				console.log(chalk.yellow('Falling back to the regular installs.'));
+				console.log();
+			}
+		}
+		if (verbose) {
+			args.push('--verbose');
+		}
+		const child = spawn(command, args, { stdio: 'inherit' });
+		child.on('close', code => {
+			if (code) {
+				reject(new Error({
+					command: `${command} ${args.join(' ')}`
+				}));
+				return;
+			}
+			resolve();
+		});
+	});
+};
+
+const executeNodeScript = ({ cwd, args }, data, source) => {
+	return new Promise((resolve, reject) => {
+		const child = spawn(process.execPath,
+			[...args, '-e', source, '--', JSON.stringify(data)],
+			{ cwd, stdio: 'inherit' }
+		);
+		child.on('close', code => {
+			if (code) {
+				reject(new Error({
+					command: `node ${args.join(' ')}`
+				}));
+				return;
+			}
+			resolve();
+		});
+	});
+};
+
+const setCaretRangeForRuntimeDeps = packageName => {
+	const packagePath = path.join(process.cwd(), 'package.json');
+	const packageJson = require(packagePath);
+
+	if (typeof packageJson.dependencies === 'undefined') {
+		console.error(chalk.red('Missing dependences in package.json'));
+		process.exit(1);
+	}
+
+	makeCaretRange(packageJson.dependencies, 'react');
+	makeCaretRange(packageJson.dependencies, 'react-dom');
+	fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 4) + os.EOL);
+};
+
+const makeCaretRange = (dependencies, name) => {
+	const version = dependencies[name];
+	if (typeof version === 'undefined') {
+		console.error(chalk.red(`Missing ${name} dependency in package.json`));
+		process.exit(1);
+	}
+	let patchedVersion = `^${version}`;
+	if (!semver.validRange(patchedVersion)) {
+		console.error(
+        `Unable to patch ${name} dependency version because version ${chalk.red(
+        	version
+        )} will become invalid ${chalk.red(patchedVersion)}`
+		);
+		patchedVersion = version;
+	}
+	dependencies[name] = patchedVersion;
+};
+
+const checkNodeVersion = packageName => {
+	const packageJsonPath = path.resolve(
+		process.cwd(),
+		'node_modules',
+		packageName,
+		'package.json'
+	);
+	if (!fs.existsSync(packageJsonPath)) {
+		return;
+	}
+	const packageJson = require(packageJsonPath);
+	if (!packageJson.engines || !packageJson.engines.node) {
+		return;
+	}
+	if (!semver.satisfies(process.version, packageJson.engines.node)) {
+		console.error(
+			chalk.red(
+				'You are running Node %s.\n'
+                + 'Create React App requires Node %s or higher. \n'
+                + 'Please update your version of Node.'
+			),
+			process.version,
+			packageJson.engines.node
+		);
+		process.exit(1);
+	}
+};
+
+const checkIfOnline = (useYarn) => {
+	if (!useYarn) Promise.resolve(true);
+	return new Promise(resolve => {
+		dns.lookup('registry.yarnpkg.com', err => {
+			let proxy = null;
+			if (err != null && (proxy = getProxy())) {
+				dns.lookup(URL.parse(proxy).hostname, proxyErr => {
+					resolve(proxyErr);
+				});
+			} else {
+				resolve(err === null);
+			}
+		});
+	});
+};
+
+const getProxy = () => {
+	if (process.env.https_proxy) {
+		return process.env.https_proxy;
+	}
+
+	try {
+		let httpsProxy = execSync('npm config get https-proxy').toString().trim();
+		return httpsProxy !== 'null' ? httpsProxy : undefined;
+	} catch (err) {
+		console.log(err);
+	}
+};
+
+const getPackageInfo = installPackage => {
+	if (installPackage.match(/^.+\.(tgz|tar\.gz)$/)) {
+		return getTemporaryDirectory()
+			.then(obj => {
+				let stream = null;
+				if (/^http/.test(installPackage)) {
+					stream = hyperquest(installPackage);
+				} else {
+					stream = fs.createReadStream(installPackage);
+				}
+				return extractStream(stream, obj.tmpdir).then(() => obj);
+			})
+			.then(obj => {
+				const { name, version } = require(path.join(
+					obj.tmpdir,
+					'package.json'
+				));
+				obj.cleanup();
+				return { name, version };
+			})
+			.catch(err => {
+				console.log(
+              `Could not extract the package name from the archive: ${err.message}`
+				);
+				const assumedProjectName = installPackage.match(
+					/^.+\/(.+?)(?:-\d+.+)?\.(tgz|tar\.gz)$/
+				)[1];
+				console.log(
+              `Based on the filename, assuming it is "${chalk.cyan(
+              	assumedProjectName
+              )}"`
+				);
+				return Promise.resolve({ name: assumedProjectName });
+			});
+	} else if (installPackage.startsWith('git+')) {
+		return Promise.resolve({
+			name: installPackage.match(/([^/]+)\.git(#.*)?$/)[1]
+		});
+	} else if (installPackage.match(/.+@/)) {
+		return Promise.resolve({
+			name: installPackage.charAt(0) + installPackage.substr(1).split('@')[0],
+			version: installPackage.split('@')[1]
+		});
+	} else if (installPackage.match(/^file:/)) {
+		const installPackagePath = installPackage.match(/^file:(.*)?$/)[1];
+		const { name, version } = require(path.join(
+			installPackagePath,
+			'package.json'
+		));
+		return Promise.resolve({ name, version });
+	}
+	return Promise.resolve({name: installPackage});
+};
+
+const getTemporaryDirectory = () => {
+	return new Promise((resolve, reject) => {
+		tmp.dir({ unsafeCleanup: true }, (err, tmpdir, callback) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve({
+					tmpdir: tmpdir,
+					cleanup: () => {
+						try {
+							callback();
+						} catch (ignored) {
+							throw new Error(ignored);
+						}
+					}
+				});
+			}
+		});
+	});
+};
+
+const extractStream = (stream, dest) => {
+	return new Promise((resolve, reject) => {
+		stream.pipe(
+			unpack(dest, err => {
+				if (err) {
+					reject(err);
+				} else {
+					resolve(dest);
+				}
+			})
+		);
 	});
 };
 
 const getInstallPackage = (version, originalDirectory) => {
 	let packageToInstall = 'react-scripts';
 	const validSemver = semver.valid(version);
-	console.log(validSemver);
-	return;
 	if (validSemver) {
 		packageToInstall += `@${validSemver}`;
 	} else if (version) {
@@ -215,7 +598,6 @@ const getInstallPackage = (version, originalDirectory) => {
 				version.match(/^file:(.*)?$/)[1]
 			)}`;
 		} else {
-			// for tar.gz or alternative paths
 			packageToInstall = version;
 		}
 	}
@@ -252,7 +634,7 @@ const getInstallPackage = (version, originalDirectory) => {
 };
 
 const getTemplateInstallPackage = (template, originalDirectory) => {
-	let templateToInstall = 'cra-template';
+	let templateToInstall = 'buzzs-react-template';
 	if (template) {
 		if (template.match(/^file:/)) {
 			templateToInstall = `file:${path.resolve(
@@ -263,11 +645,8 @@ const getTemplateInstallPackage = (template, originalDirectory) => {
 			template.includes('://')
         || template.match(/^.+\.(tgz|tar\.gz)$/)
 		) {
-			// for tar.gz or alternative paths
 			templateToInstall = template;
 		} else {
-			// Add prefix 'cra-template-' to non-prefixed templates, leaving any
-			// @scope/ and @version intact.
 			const packageMatch = template.match(/^(@[^/]+\/)?([^@]+)?(@.+)?$/);
 			const scope = packageMatch[1] || '';
 			const templateName = packageMatch[2] || '';
@@ -277,19 +656,10 @@ const getTemplateInstallPackage = (template, originalDirectory) => {
 				templateName === templateToInstall
           || templateName.startsWith(`${templateToInstall}-`)
 			) {
-				// Covers:
-				// - cra-template
-				// - @SCOPE/cra-template
-				// - cra-template-NAME
-				// - @SCOPE/cra-template-NAME
 				templateToInstall = `${scope}${templateName}${version}`;
 			} else if (version && !scope && !templateName) {
-				// Covers using @SCOPE only
 				templateToInstall = `${version}/${templateToInstall}`;
 			} else {
-				// Covers templates without the `cra-template` prefix:
-				// - NAME
-				// - @SCOPE/NAME
 				templateToInstall = `${scope}${templateToInstall}-${templateName}${version}`;
 			}
 		}
@@ -511,5 +881,6 @@ const checkForLatestVersion = () => {
 };
 
 module.exports = {
-	init
+	init,
+	getTemplateInstallPackage
 };

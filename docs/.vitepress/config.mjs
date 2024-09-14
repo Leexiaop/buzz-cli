@@ -4,7 +4,7 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
 	title: 'Create-Buzzs-App',
 	description: 'A Create-Buzzs-app description!',
-	base: '/create-buzzs-app/',
+	base: process.env.NODE_ENV === 'development' ? '/' : '/create-buzzs-app/',
 	themeConfig: {
 		search: {
 			provider: 'local'
@@ -26,8 +26,28 @@ export default defineConfig({
 			{
 				text: '开发',
 				items: [
-					{text: '准备工作', link: '/before'},
-					{text: '初始化项目', link: '/init'}
+					{
+						text: '准备工作',
+						link: '/before'
+					},
+					{
+						text: '初始化项目',
+						link: '/init'
+					},
+					{
+						text: 'create-buzzs-app',
+						link: '/create-buzzs-app/index',
+						items: [
+							{
+								text: 'index.js',
+								link: '/create-buzzs-app/indexjs'
+							},
+							{
+								text: 'init函数',
+								link: '/create-buzzs-app/init'
+							}
+						]
+					}
 				]
 			}
 		],
