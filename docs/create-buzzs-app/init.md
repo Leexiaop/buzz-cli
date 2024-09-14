@@ -148,3 +148,154 @@ yarn workspace create-buzzs-app add envinfo
 	}
     ...
 ```
+
+## semver包
+
+这里我们将会用到一个node工具函数包semver.安装如下：
+
+```shell
+npm install semver --save
+//  或者
+lerna add semver --scope=create-buzzs-app
+//  或者
+yarn workspace create-buzzs-app add semver
+```
+我们将会用到semver.lt()这个方法，主要用来对比版本号，那么我们在我们的代码中怎么用呢？
+
+未来我们的脚手架开发完成发布到npm上后，我们的版本号只能是增加，不能是不变或者减小对吧，对，就是这里会用到，这里我们在检查完projectName后，就要去对比远程npm上的版本和当前版本到底是那个大？代码应该是这样的：
+```js
+...
+checkForLatestVersion().then((res) => {
+    if (res && semver.lt(packageJson.version, res)) {
+        console.log();
+        console.error(
+            chalk.yellow(
+                `You are running \`create-buzzs-app\` ${packageJson.version}, which is behind the latest release (${res}).\n\n`
+                    + 'We recommend always using the latest version of create-buzzs-app if possible.'
+            )
+        );
+        console.log();
+        console.log(
+            'The latest instructions for creating a new app can be found here:\n'
+                + 'https://www.ibadgers.cn/create-buzzs-app/'
+        );
+        console.log();
+    } else {
+        const useYarn = isUsingYarn();
+        createApp(
+            projectName,
+            program.verbose,
+            program.scriptsVersion,
+            program.template,
+            useYarn,
+            program.usePnp
+        );
+    }
+});
+```
+
+checkForLatestVersion方法的主要作用就是获取了远程的npm最新版本号，至于怎么获取，我们稍后再说，他返回一个promise，其结果就是返回了远程npm的版本号，我们通过对比与当前的，如果当前版本号高于远程版本号，那就继续走创建项目的createApp函数，否则，提示信息，结束进程。
+
+```js
+semver.lt(packageJson.version, res)
+
+semver.lt('1.2.3', '2.3.4') //  true
+```
+这里是对比的代码。
+至此，初始化函数的代码大致就是这样。
+
+## 完整代码
+
+```js
+const packageJson = require('../package.json')
+const envinfo = require('envinfo')
+const semver = require('semver')
+const commander = require('commander')
+const chalk = require('chalk')
+
+let projectName = '';
+const init = () => {
+	const program = new commander.Command(packageJson.name)
+		.version(packageJson.version)
+		.arguments('<project-directory>')
+		.usage(`${chalk.green('<project-directory>')} [options]`)
+		.action((name) => {
+			projectName = name;
+		})
+		.option('--verbose', 'print additional logs')
+		.parse(process.argv);
+
+	if (program.info) {
+		console.log(chalk.bold('\nEnvironment Info:'));
+		console.log(
+			`\n  current version of ${packageJson.name}: ${packageJson.version}`
+		);
+		console.log(`  running from ${__dirname}`);
+		return envinfo
+			.run(
+				{
+					System: ['OS', 'CPU'],
+					Binaries: ['Node', 'npm', 'Yarn'],
+					Browsers: [
+						'Chrome',
+						'Edge',
+						'Internet Explorer',
+						'Firefox',
+						'Safari'
+					],
+					// npmPackages: ["react", "react-dom", "react-scripts"],
+					npmGlobalPackages: ['create-buzzs-app', 'buzzs', 'react', 'react-dom', 'react-scripts']
+				},
+				{
+					duplicates: true,
+					showNotFound: true
+				}
+			)
+			.then(console.log);
+	}
+
+	if (!projectName.trim() || typeof projectName !== 'string') {
+		console.error('Please specify the project directory:');
+		console.log(
+			`  ${chalk.cyan(program.name())} ${chalk.green('<project-directory>')}`
+		);
+		console.log();
+		console.log('For example:');
+		console.log(
+			`  ${chalk.cyan(program.name())} ${chalk.green('my-buzzs-app')}`
+		);
+		console.log();
+		console.log(
+			`Run ${chalk.cyan(`${program.name()} --help`)} to see all options.`
+		);
+		process.exit(1);
+	}
+	checkForLatestVersion().then((res) => {
+		if (res && semver.lt(packageJson.version, res)) {
+			console.log();
+			console.error(
+				chalk.yellow(
+					`You are running \`create-buzzs-app\` ${packageJson.version}, which is behind the latest release (${res}).\n\n`
+						+ 'We recommend always using the latest version of create-buzzs-app if possible.'
+				)
+			);
+			console.log();
+			console.log(
+				'The latest instructions for creating a new app can be found here:\n'
+					+ 'https://www.ibadgers.cn/create-buzzs-app/'
+			);
+			console.log();
+		} else {
+			const useYarn = isUsingYarn();
+			createApp(
+				projectName,
+				program.verbose,
+				program.scriptsVersion,
+				program.template,
+				useYarn,
+				program.usePnp
+			);
+		}
+	});
+};
+```

@@ -45,8 +45,24 @@ export default defineConfig({
 							{
 								text: 'init函数',
 								link: '/create-buzzs-app/init'
+							},
+							{
+								text: 'checkForLatestVersion',
+								link: '/create-buzzs-app/checkForLatestVersion'
+							},
+							{
+								text: 'createApp',
+								link: '/create-buzzs-app/createApp'
+							},
+							{
+								text: 'isUsingYarn',
+								link: '/create-buzzs-app/isUsingYarn'
 							}
 						]
+					},
+					{
+						text: 'buzzs-react-template',
+						link: '/buzzs-react-template/index'
 					}
 				]
 			}
