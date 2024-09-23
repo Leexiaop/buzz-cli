@@ -864,7 +864,6 @@ const checkForLatestVersion = () => {
 			.get(
 				'https://registry.npmjs.org/-/package/create-react-app/dist-tags',
 				(res) => {
-					console.log(res);
 					if (res.statusCode === 200) {
 						let body = '';
 						res.on('data', (data) => (body += data));
