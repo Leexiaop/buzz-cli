@@ -43,7 +43,7 @@ export default defineConfig({
 								link: '/create-buzzs-app/indexjs'
 							},
 							{
-								text: 'init函数',
+								text: 'init',
 								link: '/create-buzzs-app/init'
 							},
 							{
@@ -57,12 +57,40 @@ export default defineConfig({
 							{
 								text: 'isUsingYarn',
 								link: '/create-buzzs-app/isUsingYarn'
+							},
+							{
+								text: 'checkAppName',
+								link: '/create-buzzs-app/checkAppName'
+							},
+							{
+								text: 'checkNpmVersion',
+								link: '/create-buzzs-app/checkNpmVersion'
+							},
+							{
+								text: 'checkYarnVersion',
+								link: '/create-buzzs-app/checkYarnVersion'
+							},
+							{
+								text: 'checkThatNpmCanReadCwd',
+								link: '/create-buzzs-app/checkThatNpmCanReadCwd'
+							},
+							{
+								text: 'isSafeToCreateProjectIn',
+								link: '/create-buzzs-app/isSafeToCreateProjectIn'
+							},
+							{
+								text: 'run',
+								link: '/create-buzzs-app/run'
 							}
 						]
 					},
 					{
 						text: 'buzzs-react-template',
 						link: '/buzzs-react-template/index'
+					},
+					{
+						text: 'buzzs-script',
+						link: '/buzzs-script/index'
 					}
 				]
 			}

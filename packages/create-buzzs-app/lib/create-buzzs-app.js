@@ -139,8 +139,8 @@ const createApp = (name, verbose, version, template, useYarn, usePnp) => {
 		version: '0.1.0',
 		private: true
 	};
-	fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(packageJson, null, 2) + os.EOL);
-	console.log(process.cwd());
+	fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(packageJson, null, 4) + os.EOL);
+
 	const originalDirectory = process.cwd();
 	//  变更node工作的进程目录
 	process.chdir(root);
