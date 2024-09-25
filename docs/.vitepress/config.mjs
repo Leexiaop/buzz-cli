@@ -81,6 +81,18 @@ export default defineConfig({
 							{
 								text: 'run',
 								link: '/create-buzzs-app/run'
+							},
+							{
+								text: 'getInstallPackage',
+								link: '/create-buzzs-app/getInstallPackage'
+							},
+							{
+								text: 'getTemplateInstallPackage',
+								link: '/create-buzzs-app/getTemplateInstallPackage'
+							},
+							{
+								text: 'getPackageInfo',
+								link: '/create-buzzs-app/getPackageInfo'
 							}
 						]
 					},
